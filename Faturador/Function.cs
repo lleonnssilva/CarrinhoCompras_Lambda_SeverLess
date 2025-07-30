@@ -2,6 +2,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
+using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 using Compartilhado;
 using Compartilhado.Enums;
@@ -42,11 +43,10 @@ namespace Faturador
                 if (isFaturado)
                 {
                   
-                    await AmazonUtil.EnviarParaFila(FilaSQS.notificacao_fatura, pedido, $"Processo de faturamento feito com sucesso: {message.Body}");
+                    await AmazonUtil.EnviarParaFila(FilaSNS.faturado, pedido, $"Processo de faturamento feito com sucesso: {message.Body}");
                     pedido.Status = StatusDoPedido.Faturado;
                     await pedido.SalvarAsync();
                     LambdaLogger.Log($"SalvarAsync Processo de faturamento feito com sucesso: {message.Body}");
-
                 }
                 else
                 {

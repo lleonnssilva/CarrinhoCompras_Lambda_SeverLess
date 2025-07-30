@@ -3,13 +3,13 @@ using Amazon.SQS.Model;
 
 class Program
 {
-    private static string queueUrl = "https://sqs.us-east-1.amazonaws.com/676206946905/notificacao_fatura"; // Substitua pela URL da sua fila SQS
+    private static string queueUrl = "https://sqs.us-east-1.amazonaws.com/676206946905/falha-pagamento"; // Substitua pela URL da sua fila SQS
 
     //$"arn:aws:sns:us-east-1:676206946905:faturado"
     static async Task Main(string[] args)
     {
 
-         await LoadSQS();
+        await LoadSQS();
 
 
     }
@@ -35,9 +35,9 @@ class Program
                 if (
                     receiveMessageResponse.Messages != null &&
                     receiveMessageResponse.Messages.Count > 0)// &&
-                    //receiveMessageResponse.Messages[0].MessageAttributes != null) 
-                    //receiveMessageResponse.Messages[0].MessageAttributes.ContainsKey("EventType") &&
-                    //receiveMessageResponse.Messages[0].MessageAttributes["EventType"].StringValue == "ClienteCadastradoEvent")
+                                                              //receiveMessageResponse.Messages[0].MessageAttributes != null) 
+                                                              //receiveMessageResponse.Messages[0].MessageAttributes.ContainsKey("EventType") &&
+                                                              //receiveMessageResponse.Messages[0].MessageAttributes["EventType"].StringValue == "ClienteCadastradoEvent")
                 {
                     var message = receiveMessageResponse.Messages[0];
 
@@ -53,7 +53,7 @@ class Program
                         ReceiptHandle = message.ReceiptHandle
                     };
 
-                   // await sqsClient.DeleteMessageAsync(deleteMessageRequest);
+                     //await sqsClient.DeleteMessageAsync(deleteMessageRequest);
 
 
                 }

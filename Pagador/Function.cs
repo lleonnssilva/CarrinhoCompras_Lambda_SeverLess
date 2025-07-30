@@ -64,9 +64,10 @@ namespace Pagador
         {
             try
             {
-                // Lógica para processar o pagamento (simulação aqui)
-                // Você pode adicionar uma lógica real de pagamento como integração com bancos, gateways, etc.
-                if (pedido.Contains("Erro"))
+
+                Random random = new Random();
+                bool sucessoPagamanto = random.Next(0, 2) == 0;
+                if (!sucessoPagamanto)
                 {
                     LambdaLogger.Log($"Erro ao processar pagamento: {pedido}");
                     return false; // Simula um erro no pagamento

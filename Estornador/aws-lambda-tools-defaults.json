@@ -12,9 +12,9 @@
     "function-runtime" : "dotnet8",
     "function-memory-size" : 512,
     "function-timeout"     : 30,
-    "function-handler"     : "Notificador::Notificador.Function::FunctionHandler",
+    "function-handler"     : "Estornador::Estornador.Function::FunctionHandler",
     "framework"            : "net8.0",
-    "function-name"        : "Notificador",
+    "function-name"        : "Estornador",
     "package-type"         : "Zip",
     "function-role"        : "arn:aws:iam::676206946905:role/acesso_total_lambda",
     "function-architecture" : "x86_64",
@@ -22,6 +22,5 @@
     "function-security-groups" : "",
     "tracing-mode"             : "PassThrough",
     "environment-variables"    : "",
-    "image-tag"                : "",
-    "function-description"     : ""
+    "image-tag"                : ""
 }
