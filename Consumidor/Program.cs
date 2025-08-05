@@ -3,7 +3,7 @@ using Amazon.SQS.Model;
 
 class Program
 {
-    private static string queueUrl = "https://sqs.us-east-1.amazonaws.com/676206946905/falha-pagamento"; // Substitua pela URL da sua fila SQS
+    private static string queueUrl = "https://sqs.us-east-1.amazonaws.com/676206946905/notificacao-consumidor1"; // Substitua pela URL da sua fila SQS
 
     //$"arn:aws:sns:us-east-1:676206946905:faturado"
     static async Task Main(string[] args)
@@ -24,9 +24,9 @@ class Program
                 var receiveMessageRequest = new ReceiveMessageRequest
                 {
                     QueueUrl = queueUrl,
-                    MaxNumberOfMessages = 1,  // Quantas mensagens você quer processar de uma vez
-                    WaitTimeSeconds = 20,     // Long polling para melhorar a performance
-                    VisibilityTimeout = 30,    // O tempo em que a mensagem ficará invisível para outros consumidores
+                    MaxNumberOfMessages = 1,  
+                    WaitTimeSeconds = 20, 
+                    VisibilityTimeout = 30,   
                     MessageAttributeNames = new List<string> { "EventType" }
                 };
 
@@ -53,7 +53,7 @@ class Program
                         ReceiptHandle = message.ReceiptHandle
                     };
 
-                     //await sqsClient.DeleteMessageAsync(deleteMessageRequest);
+                    await sqsClient.DeleteMessageAsync(deleteMessageRequest);
 
 
                 }

@@ -5,6 +5,6 @@
         pedido,
         reservado,
         pago,
-        notificacao_fatura
+        faturado
     }
 }

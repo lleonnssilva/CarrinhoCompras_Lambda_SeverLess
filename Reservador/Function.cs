@@ -24,7 +24,7 @@ public class Function
     public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
     {
         if (evnt.Records.Count > 1)
-            throw new InvalidOperationException("Somente uma mensagem pode ser tratada por vez");
+            throw new InvalidOperationException("Reservador: Somente uma mensagem pode ser tratada por vez");
 
         var message = evnt.Records.FirstOrDefault();
 
@@ -42,13 +42,13 @@ public class Function
             {
                 await BaixarEstoque(produto.Id, produto.Quantidade);
                 produto.Reservado = true;
-                context.Logger.LogInformation($"Produto baixado do estoque {produto.Id} - {produto.Nome}");
+                context.Logger.LogInformation($"Reservador: Produto baixado do estoque {produto.Id} - {produto.Nome}");
             }
             catch (ConditionalCheckFailedException ex)
             {
-                pedido.JustificativaDeCancelamento = $"Produto indisponível no estoque {produto.Id} - {produto.Nome}";
+                pedido.JustificativaDeCancelamento = $"Reservador: Produto indisponível no estoque {produto.Id} - {produto.Nome}";
                 pedido.Cancelado = true;
-                context.Logger.LogInformation($"Erro:{pedido.JustificativaDeCancelamento}");
+                context.Logger.LogInformation($"Reservador: Erro:{pedido.JustificativaDeCancelamento}");
                 break;
             }
            
@@ -62,26 +62,23 @@ public class Function
                 {
                     await DevolverAoEstoque(produto.Id, produto.Quantidade);
                     produto.Reservado = false;
-                    context.Logger.LogInformation($"Produto devolvido ao estoque {produto.Id} - {produto.Nome}");
+                    context.Logger.LogInformation($"Reservador: Produto devolvido ao estoque {produto.Id} - {produto.Nome}");
                 }
                     
 
             }
-
-            var msg = $"Falha no processamento do pedido {pedido.Id}. " +
-                              $"Pedido Cancelado: {(pedido.Cancelado ? "Sim" : "Não")}. " +
-                              $"Obs: (Status: {pedido.Status} - Totl: {pedido.ValorTotal})" +
-                              $"Cliente: {pedido.Cliente.Nome}. " +
-                              $"Data: {pedido.DataDeCriacao.ToString("yyyy-MM-dd HH:mm:ss")}";
-            context.Logger.LogInformation($"Pedido Falho : ID: {pedido.Id} - Status: {pedido.Status}");
-            await AmazonUtil.EnviarParaFila(FilaSNS.falha, pedido, msg);
+           
             await pedido.SalvarAsync();
+            context.Logger.LogInformation($"Reservador: Pedido Falho : ID: {pedido.Id} - Status: {pedido.Status}");
+            await AmazonUtil.EnviarParaFila(FilaSNS.falha_reservador, pedido, $"Reservador: Falha no processamento do pedido {pedido.Id}. ");
+            
         }
         else
         {
-            context.Logger.LogInformation($"Pedido Reservado : ID: {pedido.Id} - Status: {pedido.Status}");
-            await AmazonUtil.EnviarParaFila(FilaSQS.reservado, pedido, $"Pedido Reservado : ID: {pedido.Id} - Status: {pedido.Status}");
             await pedido.SalvarAsync();
+            context.Logger.LogInformation($"Reservador: Pedido Reservado : ID: {pedido.Id} - Status: {pedido.Status}");
+            await AmazonUtil.EnviarParaFila(FilaSQS.reservado, pedido, $"Pedido Reservado : ID: {pedido.Id} - Status: {pedido.Status}");
+           
         }
 
     }

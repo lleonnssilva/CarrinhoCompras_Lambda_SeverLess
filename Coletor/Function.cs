@@ -16,36 +16,30 @@ public class Function
     {
         foreach (var record in dynamoEvent.Records)
         {
-            context.Logger.LogLine("Antes Record");
+           
             if (record.EventName == "INSERT")
             {
                 var pedidoDictionary = record.Dynamodb.NewImage.ToAmazonAttributeValues();
-                context.Logger.LogLine($"pedidoDictionary - {pedidoDictionary.Count} - {pedidoDictionary.FirstOrDefault().Value}");
-                //var pedido =   record.Dynamodb.NewImage.ToObject<Pedido>();
                 var pedido = pedidoDictionary.ToObject<Pedido>();
-              
-                context.Logger.LogLine($"Produtos: '{pedido.Produtos?.Count ?? 00}- id:{pedido?.Id} - {pedido?.ValorTotal}'");
                 pedido.Status = StatusDoPedido.Coletado;
 
                 try
                 {
-                    context.Logger.LogLine("try");
                     await ProcessarValorDoPedido(pedido);
-                    context.Logger.LogLine("ProcessarValorDoPedido");
+                    context.Logger.LogLine("Coletor: Processar valor do pedido");
+
                     await AmazonUtil.EnviarParaFila(FilaSQS.pedido, pedido, $"Sucesso na coleta do pedido: '{pedido.Id}'");
-                    context.Logger.LogLine("EnviarParaFila FilaSQS");
-                    context.Logger.LogLine($"Sucesso na coleta do pedido: '{pedido.Id}'");
+                    
                 }
                 catch (Exception ex)
                 {
-                    context.Logger.LogLine($"Erro: '{ex.Message}'");
                     pedido.JustificativaDeCancelamento = ex.Message;
                     pedido.Cancelado = true;
-                    context.Logger.LogLine("EnviarParaFila FilaSNS");
-                    await AmazonUtil.EnviarParaFila(FilaSNS.falha, pedido, $"Erro na coleta do pedido: '{ex.Message}'");
+                    await AmazonUtil.EnviarParaFila(FilaSNS.falha_coletor, pedido, $"Coletor: Erro na coleta do pedido: '{ex.Message}'");
                 }
 
                 await pedido.SalvarAsync();
+                context.Logger.LogLine($"Coletor: Sucesso na coleta do pedido: '{pedido.Id}'");
             }
         }
     }

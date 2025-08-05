@@ -5,6 +5,7 @@
         Coletado,
         Reservado,
         Pago,
-        Faturado
+        Faturado,
+        Estornado
     }
 }

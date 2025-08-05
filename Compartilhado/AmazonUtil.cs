@@ -62,58 +62,24 @@ namespace Compartilhado
         }
         public static async Task EnviarParaFila(FilaSNS fila, Pedido pedido, string msg)
         {
-            
 
-            // ARN do tópico SNS para o qual você deseja enviar a mensagem
-            //string topicArn = "arn:aws:sns:us-east-1:123456789012:meu-topico";
-
-            // Mensagem a ser enviada
-            string mensagem = "Olá, esta é uma notificação do SNS!";
-
-            // Criar a requisição de publicação
             var publishRequest = new PublishRequest
             {
                 TopicArn = $"arn:aws:sns:us-east-1:676206946905:{fila}",
-                Message = mensagem,   // Mensagem que será enviada
-                Subject = "Notificação SNS"  // Assunto da mensagem
+                Message = JsonConvert.SerializeObject(pedido), 
+                Subject = "Notificação SNS"
             };
 
             try
             {
-                // Enviar a mensagem para o tópico SNS
                 var response = _snsClient.PublishAsync(publishRequest).Result;
-
-                // Exibir resposta
-                Console.WriteLine("Mensagem enviada com sucesso!");
-                Console.WriteLine("MessageId: " + response.MessageId);
+                Console.WriteLine($"Mensagem sucesso: Tipo:EnviarParaFila(FilaSNS), Id:{response.MessageId}");
             }
             catch (Exception ex)
             {
-                // Tratar possíveis erros
-                Console.WriteLine("Erro ao enviar a mensagem: " + ex.Message);
+                Console.WriteLine($"Mensagem erro: Tipo:EnviarParaFila(FilaSNS), msg:{ex.Message}");
             }
 
-
-            //var snsRequest = new PublishRequest
-            //{
-            //    TopicArn = $"arn:aws:sns:us-east-1:676206946905:{fila}",
-            //    Message = msg,
-            //};
-
-            //try
-            //{
-
-            //    // Enviando a mensagem para o SNS
-            //    var response = await _snsClient.PublishAsync(snsRequest);
-
-            //    // Log de sucesso
-            //    LambdaLogger.Log($"Mensagem enviada com sucesso para o SNS. ID da mensagem: {response.MessageId}\n- Msg:{msg}");
-            //}
-            //catch (Exception ex)
-            //{
-            //    // Log de erro com stack trace detalhado
-            //    LambdaLogger.Log($"Erro ao enviar mensagem para o SNS: {ex.Message}\n{ex.StackTrace}");
-            //}
         }
         public static Amazon.DynamoDBv2.Model.AttributeValue ToAmazonAttributeValue(this DynamoDBEvent.AttributeValue attributeValue)
         {

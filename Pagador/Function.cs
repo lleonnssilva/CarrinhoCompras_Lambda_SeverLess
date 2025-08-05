@@ -2,14 +2,12 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
-using Amazon.SQS;
 using Compartilhado;
 using Compartilhado.Enums;
 using Compartilhado.Model;
 using Newtonsoft.Json;
 
 
-// Use a camada do AWS Lambda
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace Pagador
@@ -23,8 +21,9 @@ namespace Pagador
         }
         public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
         {
+            context.Logger.LogInformation($"Pagador SQSEvent: {evnt.Records.FirstOrDefault()}");
             if (evnt.Records.Count > 1)
-                throw new InvalidOperationException("Somente uma mensagem pode ser tratada por vez");
+                throw new InvalidOperationException("Pagador: Somente uma mensagem pode ser tratada por vez");
 
             var message = evnt.Records.FirstOrDefault();
 
@@ -40,46 +39,42 @@ namespace Pagador
                 if (isPaymentSuccessful)
                 {
                     pedido.Status = StatusDoPedido.Pago;
-                    await AmazonUtil.EnviarParaFila(FilaSQS.pago, pedido, $"Processo de pagamento feito com sucesso: {message.Body}");
                     await pedido.SalvarAsync();
-                    LambdaLogger.Log($"Processo de pagamento feito com sucesso: {message.Body}");
+                    context.Logger.LogInformation($"Pagador: Processo de pagamento feito com sucesso: {message.Body}");
+                    await AmazonUtil.EnviarParaFila(FilaSQS.pago, pedido, $"Pagador: Processo de pagamento feito com sucesso: {message.Body}");
+                   
+                    
                 }
                 else
                 {
                     pedido.Status = StatusDoPedido.Reservado;
-                    await AmazonUtil.EnviarParaFila(FilaSNS.falha, pedido, $"Falha no processamento do pagamento: {message.Body}");
-                    LambdaLogger.Log($"Falha no processamento do pagamento: {message.Body}");
+                    pedido.Cancelado = false;
+                    pedido.JustificativaDeCancelamento = $"Pagador: Falha no processamento do pagamento: {message.Body}";
+                    context.Logger.LogInformation($"Pagador: Falha no processamento do pagamento");
+                    await pedido.SalvarAsync();
+                    context.Logger.LogInformation($"Pagador: Falha no processamento do pagamento: {message.Body}");
+                    await AmazonUtil.EnviarParaFila(FilaSNS.falha_pagador, pedido, message.Body);
+                    
                 }
             }
             catch (ConditionalCheckFailedException ex)
             {
-                pedido.JustificativaDeCancelamento = $"Erro no pagamento!";
+                pedido.JustificativaDeCancelamento = $"Pagador: Erro no pagamento!";
                 pedido.Cancelado = false;
-                context.Logger.LogInformation($"Erro:{pedido.JustificativaDeCancelamento}");
+                context.Logger.LogInformation($"Pagador: Erro:{pedido.JustificativaDeCancelamento}");
                 await pedido.SalvarAsync();
             }
         }
 
         private bool ProcessarPagamento(string pedido)
         {
-            try
-            {
-
+           
                 Random random = new Random();
                 bool sucessoPagamanto = random.Next(0, 2) == 0;
                 if (!sucessoPagamanto)
-                {
-                    LambdaLogger.Log($"Erro ao processar pagamento: {pedido}");
-                    return false; // Simula um erro no pagamento
-                }
-                LambdaLogger.Log($"Sucesso ao processar pagamento: {pedido}");
-                return true; // Simula um pagamento bem-sucedido
-            }
-            catch (Exception ex)
-            {
-                LambdaLogger.Log($"Erro ao processar pagamento: {ex.Message}");
-                return false;
-            }
+                    return false; 
+                return true;
+           
         }
 
     }

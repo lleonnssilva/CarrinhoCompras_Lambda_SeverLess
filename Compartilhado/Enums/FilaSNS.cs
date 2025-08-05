@@ -2,7 +2,11 @@
 {
     public enum FilaSNS
     {
-        falha,
-        faturado
+        falha_pagador,
+        falha_faturador,
+        falha_coletor,
+        falha_reservador,
+        faturado,
+        pago
     }
 }

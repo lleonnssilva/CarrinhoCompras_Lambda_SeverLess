@@ -53,7 +53,7 @@ class Program
                         ReceiptHandle = message.ReceiptHandle
                     };
 
-                    //await sqsClient.DeleteMessageAsync(deleteMessageRequest);
+                    await sqsClient.DeleteMessageAsync(deleteMessageRequest);
 
 
                 }

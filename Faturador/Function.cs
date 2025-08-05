@@ -2,15 +2,12 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
-using Amazon.SimpleNotificationService;
-using Amazon.SimpleNotificationService.Model;
 using Compartilhado;
 using Compartilhado.Enums;
 using Compartilhado.Model;
 using Newtonsoft.Json;
 
 
-// Use a camada do AWS Lambda
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace Faturador
@@ -25,7 +22,7 @@ namespace Faturador
         public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
         {
             if (evnt.Records.Count > 1)
-                throw new InvalidOperationException("Somente uma mensagem pode ser tratada por vez");
+                throw new InvalidOperationException("Faturador: Somente uma mensagem pode ser tratada por vez");
 
             var message = evnt.Records.FirstOrDefault();
 
@@ -42,45 +39,34 @@ namespace Faturador
                 bool isFaturado= FaturarPagamento(message.Body);
                 if (isFaturado)
                 {
-                  
-                    await AmazonUtil.EnviarParaFila(FilaSNS.faturado, pedido, $"Processo de faturamento feito com sucesso: {message.Body}");
                     pedido.Status = StatusDoPedido.Faturado;
                     await pedido.SalvarAsync();
-                    LambdaLogger.Log($"SalvarAsync Processo de faturamento feito com sucesso: {message.Body}");
+                    context.Logger.LogInformation($"Faturador: Processo de faturamento feito com sucesso: {message.Body}");
+                    await AmazonUtil.EnviarParaFila(FilaSNS.faturado, pedido, $"Faturador: Processo de faturamento feito com sucesso: {message.Body}");
+                  
                 }
                 else
                 {
-                    await AmazonUtil.EnviarParaFila(FilaSNS.falha, pedido, "Falha no faturamento do pagamento");
-                    LambdaLogger.Log($"Falha no faturamento do pagamento: {message.Body}");
+                   
+                    await AmazonUtil.EnviarParaFila(FilaSNS.falha_faturador, pedido, "Faturador: Falha no faturamento do pagamento");
+                    context.Logger.LogInformation($"Faturador: Falha no faturamento do pagamento: {message.Body}");
                 }
             }
             catch (ConditionalCheckFailedException ex)
             {
-                pedido.JustificativaDeCancelamento = $"Erro no faturamento!";
-                context.Logger.LogInformation($"Erro:{pedido.JustificativaDeCancelamento}");
+                pedido.JustificativaDeCancelamento = $"Faturador: Erro no faturamento!";
+                context.Logger.LogInformation($"Faturador: Erro:{pedido.JustificativaDeCancelamento}");
                 await pedido.SalvarAsync();
             }
         }
 
         private bool FaturarPagamento(string pedido)
         {
-            try
-            {
-                // Lógica para processar o pagamento (simulação aqui)
-                // Você pode adicionar uma lógica real de pagamento como integração com bancos, gateways, etc.
-                if (pedido.Contains("Erro"))
-                {
-                    LambdaLogger.Log($"Erro ao faturar o pagamento: {pedido}");
-                    return false; // Simula um erro no pagamento
-                }
-                LambdaLogger.Log($"Sucesso ao faturar o pagamento: {pedido}");
-                return true; // Simula um pagamento bem-sucedido
-            }
-            catch (Exception ex)
-            {
-                LambdaLogger.Log($"Erro ao faturar pagamento: {ex.Message}");
+            Random random = new Random();
+            bool sucessoPagamanto = random.Next(0, 2) == 0;
+            if (!sucessoPagamanto)
                 return false;
-            }
+            return true;
         }
 
     }
